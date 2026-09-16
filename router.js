@@ -115,8 +115,81 @@ function wireMobileNav(){
   });
 }
 
+
+/* ============================================================
+   CINEMATICS — runs on public pages only.
+   Adds .motion to <html> so the CSS entrance/reveal rules apply.
+   Without JS, or with reduced motion, nothing is hidden.
+   ============================================================ */
+const REDUCED = () => {
+  try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch(e){ return false; }
+};
+
+function countUp(el){
+  const raw = el.textContent.trim();
+  const m = raw.match(/^(\d+)(\D*)$/);           // 104, 93%  — not 36+1 or 24/7
+  if(!m) return;
+  const target = Number(m[1]), suffix = m[2];
+  if(target < 2) return;
+  const dur = 1100, start = performance.now();
+  el.textContent = "0" + suffix;
+  const tick = now => {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(target * eased) + suffix;
+    if(t < 1) requestAnimationFrame(tick);
+    else el.textContent = raw;
+  };
+  requestAnimationFrame(tick);
+}
+
+function cinematics(){
+  const root = document.documentElement;
+  if(REDUCED()){ root.classList.remove("motion"); return; }
+  root.classList.add("motion");
+
+  /* stagger everything worth revealing */
+  const SELECTORS = [".sec-head", ".div-card", ".fleet-card", ".panel",
+                     ".tablewrap", ".flyer-band", ".cta-band", ".svc-block", ".track-line"];
+  const items = [];
+  SELECTORS.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      if(el.closest(".hero") || el.classList.contains("reveal")) return;
+      el.classList.add("reveal");
+      items.push(el);
+    });
+  });
+  /* delay is per position within its own row, so cards cascade */
+  items.forEach(el => {
+    const sibs = el.parentElement ? [...el.parentElement.children].filter(c => c.classList.contains("reveal")) : [];
+    const i = Math.max(0, sibs.indexOf(el));
+    el.style.setProperty("--d", Math.min(i, 6) * 70 + "ms");
+  });
+
+  const show = el => el.classList.add("in");
+
+  if(!("IntersectionObserver" in window)){ items.forEach(show); return; }
+
+  const io = new IntersectionObserver((entries, obs) => {
+    entries.forEach(e => { if(e.isIntersecting){ show(e.target); obs.unobserve(e.target); } });
+  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.06 });
+
+  items.forEach(el => {
+    /* anything already on screen reveals immediately — the first frame is never blank */
+    const r = el.getBoundingClientRect();
+    if(r.top < window.innerHeight * 0.96) show(el); else io.observe(el);
+  });
+
+  /* safety net: nothing stays hidden, whatever the observer does */
+  setTimeout(() => items.forEach(show), 1800);
+
+  document.querySelectorAll(".hero-stats div b").forEach(countUp);
+}
+
 function wirePublic(base){
   wireMobileNav();
+  cinematics();
   if(base==="#/quote") wireQuote();
   if(base==="#/track") wireTrack();
   if(base==="#/book")  wireBook();
@@ -145,6 +218,7 @@ function signOut(){
 }
 
 function wireAdmin(base){
+  document.documentElement.classList.remove("motion");
   document.querySelectorAll("[data-logout]").forEach(b=>b.addEventListener("click", signOut));
 
   const burger=document.getElementById("burger"), rail=document.getElementById("rail");

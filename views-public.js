@@ -16,7 +16,7 @@ function heroArt(){
 function viewHome(){
   const live = ALL_SERVICES.filter(s=>s.status==="live").length;
   return page("#/", `
-  <section class="hero"><div class="wrap hero-in">
+  <section class="hero"><div class="hero-beam" aria-hidden="true"></div><div class="wrap hero-in">
     <div>
       <span class="script">${esc(BRAND.tagline)}</span>
       <h1>Move anything <em>out of Abuja.</em><br>Or into it.</h1>
