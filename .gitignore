@@ -1,0 +1,5 @@
+.DS_Store
+Thumbs.db
+*.zip
+PUSH-TO-GITHUB.bat
+DEPLOY-TO-RENDER.txt

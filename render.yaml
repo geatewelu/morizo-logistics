@@ -1,0 +1,13 @@
+services:
+  - type: web
+    runtime: static
+    name: morizo-logistics
+    buildCommand: 'true'
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: sameorigin
+      - path: /*.jpg
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
